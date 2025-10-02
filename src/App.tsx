@@ -1,21 +1,13 @@
 import { Route, Routes } from 'react-router-dom'
 import './App.css'
 import DashboardLayout from './layouts/DashboardLayout';
-import StoreTable from './components/tables/StoreTable';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ProtectedRoute from './protecting/ProtectedRoute';
 import StoreDetails from './components/tables/StoreDetails';
 import ItemsTable from './components/tables/ItemsTable';
+import Stores from './pages/dashboard/Stores';
 
-
-function StoresPage() {
-  return (
-    <div>
-      <StoreTable />
-    </div>
-  );
-}
 
 function TagsPage() {
   return <div>Tags page</div>;
@@ -38,8 +30,8 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
 
         <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-          <Route path="stores" element={<StoresPage />} />
-          <Route path="/stores/:id" element={<StoreDetails />} />
+          <Route path="stores" element={<Stores />} />
+          <Route path="stores/:id" element={<StoreDetails />} />
           <Route path="tags" element={<TagsPage />} />
           <Route path="items" element={<ItemsPage />} />
         </Route>
