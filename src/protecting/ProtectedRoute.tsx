@@ -1,14 +1,17 @@
-import type { JSX } from "react";
+import { useAuthStore } from "@/stores/authStore";
 import { Navigate } from "react-router-dom";
+import type { ReactNode } from "react";
 
 type Props = {
-  children: JSX.Element;
+  children: ReactNode;
 };
 
 export default function ProtectedRoute({ children }: Props) {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
+  const { isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  return children;
+
+  return <>{children}</>;
 }
