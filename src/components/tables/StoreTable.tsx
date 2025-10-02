@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -7,168 +8,65 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import api from "@/api/axiosInstance";
 import { Link } from "react-router-dom";
-import { Edit, Trash } from "lucide-react";
+import { Edit } from "lucide-react";
+import { useStoreStore } from "@/stores/storeStore";
+import type { Store } from "@/types/storeTypes";
 
-type Item = { id: number; name: string; price: number };
-type Tag = { id: number; name: string };
-type Store = { id: number; name: string; items: Item[]; tags: Tag[] };
+import EditModal from "../common/modals/EditModal";
+import { Input } from "../ui/input";
+import DeleteModal from "../common/modals/DeleteModal";
 
 export default function StoreTable() {
-  const [stores, setStores] = useState<Store[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const {
+    stores,
+    allTags,
+    loading,
+    fetchStores,
+    fetchAllTags,
+    updateStore,
+    deleteStore,
+  } = useStoreStore();
 
-  // form states
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
-  const [editId, setEditId] = useState<number | null>(null);
-
-  // fetch stores
-  const fetchStores = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/store");
-      setStores(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAllTags = async () => {
-    try {
-      const storeRes = await api.get("/store");
-      const tagsSet = new Map<number, Tag>();
-      storeRes.data.forEach((store: Store) => {
-        store.tags.forEach((tag) => {
-          tagsSet.set(tag.id, tag);
-        });
-      });
-      setAllTags(Array.from(tagsSet.values()));
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   useEffect(() => {
     fetchStores();
     fetchAllTags();
   }, []);
 
-  const handleSubmit = async () => {
-    try {
-      let storeId: number;
-      if (editId) {
-        await api.put(`/store/${editId}`, { name });
-        storeId = editId;
-      } else {
-        const res = await api.post("/store", { name });
-        storeId = res.data.id;
-      }
-
-      const currentStore = stores.find((s) => s.id === storeId);
-      const currentTags = currentStore ? currentStore.tags.map((t) => t.id) : [];
-      const tagsToAdd = selectedTags.filter((id) => !currentTags.includes(id));
-      const tagsToRemove = currentTags.filter((id) => !selectedTags.includes(id));
-
-      for (const tagId of tagsToAdd) {
-        await api.post(`/store/${storeId}/tag/${tagId}`);
-      }
-      for (const tagId of tagsToRemove) {
-        await api.delete(`/store/${storeId}/tag/${tagId}`);
-      }
-
+  // Update name/tags when selectedStore changes
+  useEffect(() => {
+    if (selectedStore) {
+      setName(selectedStore.name);
+      setSelectedTags(selectedStore.tags.map((t) => t.id));
+    } else {
       setName("");
       setSelectedTags([]);
-      setEditId(null);
-      setIsOpen(false);
-      fetchStores();
-      fetchAllTags();
-    } catch (err) {
-      console.error(err);
     }
+  }, [selectedStore]);
+
+  const handleEdit = async (id: number, newName: string, tags: number[]) => {
+    await updateStore(id, newName, tags);
+    setEditOpen(false);
+    setSelectedStore(null);
   };
 
   const handleDelete = async (id: number) => {
-    try {
-      await api.delete(`/store/${id}`);
-      fetchStores();
-      fetchAllTags();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const openEdit = (store: Store) => {
-    setEditId(store.id);
-    setName(store.name);
-    setSelectedTags(store.tags.map((t) => t.id));
-    setIsOpen(true);
+    await deleteStore(id);
+    setDeleteId(null);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Stores</h2>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsOpen(true)}>Add Store</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editId ? "Edit Store" : "Add Store"}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <Input
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <div>
-                <h3 className="text-sm">Tags</h3>
-                <div className="space-x-2">
-                  {allTags.map((tag) => (
-                    <label key={tag.id} className="inline-flex items-center">
-                      <input
-                        type="checkbox"
-                        value={tag.id}
-                        checked={selectedTags.includes(tag.id)}
-                        onChange={() => {
-                          setSelectedTags((prev) =>
-                            prev.includes(tag.id)
-                              ? prev.filter((id) => id !== tag.id)
-                              : [...prev, tag.id]
-                          );
-                        }}
-                      />
-                      <span className="ml-2">{tag.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <Button onClick={handleSubmit}>{editId ? "Update" : "Create"}</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
+    <>
       {loading ? (
         <p className="text-gray-500">Loading...</p>
+      ) : stores.length === 0 ? (
+        <p className="text-gray-500">No stores found</p>
       ) : (
         <Table>
           <TableHeader>
@@ -205,14 +103,69 @@ export default function StoreTable() {
                     : <span className="text-neutral-400">No tags</span>}
                 </TableCell>
                 <TableCell className="flex align-center justify-center gap-4">
-                  <Edit className="cursor-pointer" onClick={() => openEdit(store)} />
-                  <Trash className="cursor-pointer" onClick={() => handleDelete(store.id)} />
+                  <Edit
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setSelectedStore(store);
+                      setEditOpen(true);
+                    }}
+                  />
+
+                  <DeleteModal
+                    isOpen={deleteId === store.id}
+                    onOpenChange={(open) =>
+                      setDeleteId(open ? store.id : null)
+                    }
+                    itemName={store.name}
+                    onConfirm={() => handleDelete(store.id)}
+                    usedFor="Store"
+                  />
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
-    </div>
+
+      {selectedStore && (
+        <EditModal
+          isOpen={editOpen}
+          onOpenChange={setEditOpen}
+          onSubmit={() => selectedStore && handleEdit(selectedStore.id, name, selectedTags)}
+          isLoading={loading}
+          usedFor="Store"
+        >
+          <Input
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+
+          {allTags.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium">Tags</h3>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {allTags.map((tag) => (
+                  <label key={tag.id} className="inline-flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedTags.includes(tag.id)}
+                      onChange={() =>
+                        setSelectedTags((prev) =>
+                          prev.includes(tag.id)
+                            ? prev.filter((id) => id !== tag.id)
+                            : [...prev, tag.id]
+                        )
+                      }
+                    />
+                    <span>{tag.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </EditModal>
+      )}
+    </>
   );
 }

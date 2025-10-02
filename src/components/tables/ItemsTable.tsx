@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/components/ItemTable.tsx
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -9,116 +8,113 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useItemStore } from "@/stores/itemStore";
+import { Edit } from "lucide-react";
+// import CreateModal from "../common/modals/CreateModal";
+import EditModal from "../common/modals/EditModal";
+import DeleteModal from "../common/modals/DeleteModal";
 import { Input } from "@/components/ui/input";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import api from "@/api/axiosInstance";
-import { Edit, Trash } from "lucide-react";
-
 
 type Item = {
   id: number;
   name: string;
   price: number;
-  store: any
+  store: { id: number; name: string };
 };
 
 export default function ItemsTable() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false);
+  const { items, loading, fetchItems, updateItem, deleteItem } =
+    useItemStore();
 
-  // form states
+  // const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editItem, setEditItem] = useState<Item | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [name, setName] = useState("");
-  const [price, setPrice] = useState<number | "">("");
-  const [editId, setEditId] = useState<number | null>(null);
-
-  // fetch items
-  const fetchItems = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/item");
-      setItems(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const [newItemName, setNewItemName] = useState("");
+  const [price, setPrice] = useState("");
+  // const [newItemPrice, setNewItemPrice] = useState("");
 
   useEffect(() => {
     fetchItems();
   }, []);
 
-  const handleSubmit = async () => {
-    try {
-      if (editId) {
-        await api.put(`/item/${editId}`, { name, price });
-      } else {
-        await api.post("/item", { name, price });
-      }
-      setName("");
-      setPrice("");
-      setEditId(null);
-      fetchItems();
-      setOpenDialog(false);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // const handleCreate = async () => {
+  //   if (!name.trim() || price === "") return;
+  //   await createItem(storeId, name, parseFloat(price));
+  //   setCreateOpen(false);
+  //   setNewItemName("");
+  //   setNewItemPrice("");
+  // };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await api.delete(`/item/${id}`);
-      fetchItems();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const openEdit = (item: Item) => {
-    setEditId(item.id);
+  const handleOpenEdit = (item: Item) => {
+    setEditItem(item);
     setName(item.name);
-    setPrice(item.price);
-    setOpenDialog(true);
+    setPrice(item.price.toString());
+    setEditOpen(true);
+  };
+
+  const handleEdit = async () => {
+    if (!editItem || !name.trim() || price === "") return;
+    await updateItem(editItem.id, editItem.store.id, name, parseFloat(price));
+    setEditOpen(false);
+    setEditItem(null);
+    fetchItems();
+    setName("");
+    setPrice("");
+  };
+
+  const handleDelete = async (id: number, storeId: number) => {
+    await deleteItem(id, storeId);
+    setDeleteId(null);
   };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Items</h2>
-
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editId ? "Edit Item" : "Add Item"}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <Input
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <Input
-                type="number"
-                placeholder="Price"
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-              />
-              <Button onClick={handleSubmit}>
-                {editId ? "Update" : "Create"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* <CreateModal
+          isOpen={createOpen}
+          onOpenChange={setCreateOpen}
+          onSubmit={handleCreate}
+          usedFor="Item"
+          isLoading={loading}
+        >
+          <Input
+            placeholder="Name"
+            value={newItemName}
+            onChange={(e) => setNewItemName(e.target.value)}
+          />
+          <Input
+            type="number"
+            placeholder="Price"
+            value={newItemPrice}
+            onChange={(e) => setNewItemPrice(e.target.value)}
+          />
+        </CreateModal> */}
       </div>
+
+      {editItem && (
+        <EditModal
+          isOpen={editOpen}
+          onOpenChange={setEditOpen}
+          onSubmit={handleEdit}
+          usedFor="Item"
+          isLoading={loading}
+        >
+          <Input
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            type="number"
+            placeholder="Price"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+        </EditModal>
+      )}
 
       {loading ? (
         <p className="text-gray-500">Loading...</p>
@@ -141,13 +137,21 @@ export default function ItemsTable() {
                 <TableCell>{item.id}</TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.price}</TableCell>
-                <TableCell>
-                  {item.store.name}
-                </TableCell>
-
-                <TableCell className="flex align-center justify-center gap-4">
-                  <Edit className="cursor-pointer" onClick={() => openEdit(item)} />
-                  <Trash className="cursor-pointer" onClick={() => handleDelete(item.id)} />
+                <TableCell>{item.store.name}</TableCell>
+                <TableCell className="flex justify-center gap-4">
+                  <Edit
+                    className="cursor-pointer"
+                    onClick={() => handleOpenEdit(item)}
+                  />
+                  <DeleteModal
+                    isOpen={deleteId === item.id}
+                    onOpenChange={(open) =>
+                      setDeleteId(open ? item.id : null)
+                    }
+                    itemName={item.name}
+                    onConfirm={() => handleDelete(item.id, item.store.id)}
+                    usedFor="Item"
+                  />
                 </TableCell>
               </TableRow>
             ))}

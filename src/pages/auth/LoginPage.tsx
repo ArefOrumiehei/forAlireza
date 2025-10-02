@@ -1,14 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import api from "@/api/axiosInstance";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/stores/authStore";
 
 type LoginForm = {
   username: string;
@@ -22,25 +18,23 @@ const schema = yup.object({
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
   } = useForm<LoginForm>({
     resolver: yupResolver(schema),
   });
 
   const onSubmit = async (data: LoginForm) => {
-    try {
-      const res = await api.post("/login", data);
-      localStorage.setItem("access_token", res.data.access_token);
-      localStorage.setItem("refresh_token", res.data.refresh_token);
+    const success = await login(data.username, data.password);
+    if (success) {
       navigate("/stores");
-    } catch (err: any) {
-      setError("username", { message: "Invalid credentials" });
     }
   };
+
 
   return (
     <div className="flex h-screen items-center justify-center bg-neutral-100">

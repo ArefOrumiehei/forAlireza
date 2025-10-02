@@ -1,13 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import api from "@/api/axiosInstance";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/stores/authStore";
 
 type RegisterForm = {
   username: string;
@@ -26,25 +23,20 @@ const schema = yup.object({
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const registerUser = useAuthStore((state) => state.register);
+  
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
   } = useForm<RegisterForm>({
     resolver: yupResolver(schema),
   });
 
   const onSubmit = async (data: RegisterForm) => {
-    try {
-      await api.post("/register", data);
+    const success = await registerUser(data.username, data.email, data.password);
+    if (success) {
       navigate("/stores");
-    } catch (err: any) {
-      if (err.response?.status === 409) {
-        setError("username", { message: "Username or email already exists" });
-      } else {
-        setError("username", { message: "Registration failed" });
-      }
     }
   };
 
