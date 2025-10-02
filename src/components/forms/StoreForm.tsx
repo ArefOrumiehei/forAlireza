@@ -1,77 +1,73 @@
-// src/components/StoreForm.tsx
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import api from "@/api/axiosInstance";
+import type { Store, Tag } from "@/types/storeTypes";
 
-type Tag = { id: number; name: string };
-type Store = { id: number; name: string; tags: Tag[] };
+interface StoreFormProps {
+  store?: Store | null;
+  allTags: Tag[];
+  onSubmit: (params: { id: number; name: string; tags: number[] } | { name: string; tags: number[] }) => Promise<void>;
+  onClose: () => void;
+}
 
-type StoreFormProps = {
-  initialData?: Store;
-  onSubmit: (data: { name: string; tagIds: number[] }) => void;
-  triggerText: string; // متن دکمه
-};
-
-export default function StoreForm({ initialData, onSubmit, triggerText }: StoreFormProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState(initialData?.name || "");
-  const [tags, setTags] = useState<number[]>(initialData?.tags.map(t => t.id) || []);
-  const [allTags, setAllTags] = useState<Tag[]>([]);
+export default function StoreForm({ store, allTags, onSubmit, onClose }: StoreFormProps) {
+  const [name, setName] = useState("");
+  const [selectedTags, setSelectedTags] = useState<number[]>([]);
 
   useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const res = await api.get("/store/1/tag"); // فقط مثال، ممکنه endpoint رو تغییر بدی
-        setAllTags(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchTags();
-  }, []);
+    if (store) {
+      setName(store.name);
+      setSelectedTags(store.tags.map((t) => t.id));
+    } else {
+      setName("");
+      setSelectedTags([]);
+    }
+  }, [store]);
 
   const handleSubmit = async () => {
-    await onSubmit({ name, tagIds: tags });
-    setIsOpen(false);
-    setName("");
-    setTags([]);
+    if (!name.trim()) return;
+
+    if (store) {
+      await onSubmit({ id: store.id, name, tags: selectedTags });
+    } else {
+      await onSubmit({ name, tags: selectedTags });
+    }
+
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button onClick={() => setIsOpen(true)}>{triggerText}</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{initialData ? "Edit Store" : "Add Store"}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-3">
-          <Input
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <select
-            multiple
-            className="border p-2 w-full"
-            value={tags.map(String)}
-            onChange={(e) => {
-              const selected = Array.from(e.target.selectedOptions).map(opt => Number(opt.value));
-              setTags(selected);
-            }}
-          >
-            {allTags.map(tag => (
-              <option key={tag.id} value={tag.id}>{tag.name}</option>
+    <div className="space-y-3">
+      <DialogHeader>
+        <DialogTitle>{store ? "Edit Store" : "Add Store"}</DialogTitle>
+      </DialogHeader>
+
+      <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+
+      {allTags.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium">Tags</h3>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {allTags.map((tag) => (
+              <label key={tag.id} className="inline-flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={selectedTags.includes(tag.id)}
+                  onChange={() =>
+                    setSelectedTags((prev) =>
+                      prev.includes(tag.id) ? prev.filter((id) => id !== tag.id) : [...prev, tag.id]
+                    )
+                  }
+                />
+                <span>{tag.name}</span>
+              </label>
             ))}
-          </select>
-          <Button onClick={handleSubmit}>{initialData ? "Update" : "Create"}</Button>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+
+      <Button onClick={handleSubmit}>{store ? "Update" : "Create"}</Button>
+    </div>
   );
 }
