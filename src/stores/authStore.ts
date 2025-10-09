@@ -10,6 +10,8 @@ type AuthState = {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   register: (username: string, email: string, password: string) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
+  resetPassword: (token: string, password: string) => Promise<boolean>;
   logout: () => void;
 };
 
@@ -68,6 +70,50 @@ export const useAuthStore = create<AuthState>((set) => ({
       return false;
     }
   },
+
+  forgotPassword: async (email) => {
+  set({ loading: true });
+  try {
+    const res = await authService.forgotPassword({ email });
+
+    if (res && res.status >= 200 && res.status < 300) {
+      toast.success("A reset link was sent 💌");
+      set({ loading: false });
+      return true;
+    }
+
+    set({ loading: false });
+    toast.error("Failed to send reset link");
+    return false;
+  } catch (err: any) {
+    set({ loading: false });
+    toast.error(err.response?.data?.message || "Failed to send reset link");
+    return false;
+  }
+},
+
+
+  resetPassword: async (token, password) => {
+  set({ loading: true });
+  try {
+    const res = await authService.resetPassword({ token, password });
+
+    if (res && res.status >= 200 && res.status < 300) {
+      set({ loading: false });
+      toast.success("Password has been reset successfully 🎉");
+      return true;
+    }
+
+    set({ loading: false });
+    toast.error("Password reset failed");
+    return false;
+  } catch (err: any) {
+    set({ loading: false });
+    toast.error(err.response?.data?.message || "Password reset failed");
+    return false;
+  }
+},
+
 
   logout: () => {
     localStorage.removeItem("access_token");

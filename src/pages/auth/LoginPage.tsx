@@ -31,7 +31,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     const success = await login(data.username, data.password);
     if (success) {
-      navigate("/stores");
+      navigate("/");
     }
   };
 
@@ -69,6 +69,11 @@ export default function LoginPage() {
           Don't have an account?{" "}
           <Link to="/register" className="text-blue-500 hover:underline">
             Register
+          </Link>
+        </p>
+        <p className="text-sm text-center text-neutral-500 mt-2">
+          <Link to="/forgot-password" className="text-blue-500 hover:underline">
+            Forgot your password?
           </Link>
         </p>
       </form>

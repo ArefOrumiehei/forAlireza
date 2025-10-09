@@ -9,11 +9,11 @@ export const authService = {
   register: (data: { username: string; email: string; password: string }) =>
     api.post("/register", data),
 
-  forgotPassword: (data: {email: string}) => {
-    api.post("/user/forgot-password", data)
-  },
+  forgotPassword: (data: { email: string }) =>
+    api.post("/user/forgot-password", data),
 
-  resetPassword: (data: {token: string, password: string}) => {
-    api.post("/user/reset-password", data)
-  },
+  resetPassword: (data: { token: string; password: string }) =>
+    api.post("/user/reset-password", data),
+
+  logout: () => api.post("/logout"),
 };
