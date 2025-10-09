@@ -15,7 +15,7 @@ export default function DeleteModal({ isOpen, onOpenChange, itemName, onConfirm,
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Trash className="cursor-pointer" />
+        <Trash className="cursor-pointer hover:text-red-500" />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
