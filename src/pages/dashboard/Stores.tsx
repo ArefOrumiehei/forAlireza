@@ -5,7 +5,7 @@ import { useStoreStore } from "@/stores/storeStore";
 import { useState } from "react";
 
 export default function Stores() {
-  const { allTags, loading, createStore } = useStoreStore();
+  const { loading, createStore } = useStoreStore();
 
   const [name, setName] = useState("");
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
@@ -30,7 +30,7 @@ export default function Stores() {
           usedFor={"Store"}
         >
           <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-          {allTags.length > 0 && (
+          {/* {allTags.length > 0 && (
             <div>
               <h3 className="text-sm font-medium">Tags</h3>
               <div className="flex flex-wrap gap-2 mt-1">
@@ -50,7 +50,7 @@ export default function Stores() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
         </CreateModal>
       </div>
 

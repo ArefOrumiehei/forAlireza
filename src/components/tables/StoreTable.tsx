@@ -20,7 +20,6 @@ import DeleteModal from "../common/modals/DeleteModal";
 export default function StoreTable() {
   const {
     stores,
-    allTags,
     loading,
     fetchStores,
     fetchAllTags,
@@ -143,7 +142,7 @@ export default function StoreTable() {
             onChange={(e) => setName(e.target.value)}
           />
 
-          {allTags.length > 0 && (
+          {/* {allTags.length > 0 && (
             <div>
               <h3 className="text-sm font-medium">Tags</h3>
               <div className="flex flex-wrap gap-2 mt-1">
@@ -165,7 +164,7 @@ export default function StoreTable() {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
         </EditModal>
       )}
     </>
