@@ -19,12 +19,12 @@ export const itemService = {
     return res;
   },
 
-  createItem: async (storeId: number, name: string, price: number) => {
-    await api.post("/item", { store_id: storeId, name, price });
+  createItem: async (storeId: number, name: string, price: number, desc: string) => {
+    await api.post("/item", { store_id: storeId, name, price, description: desc });
   },
 
-  updateItem: async (id: number, name: string, price: number) => {
-    await api.put(`/item/${id}`, { name, price });
+  updateItem: async (id: number, name: string, price: number, desc: string) => {
+    await api.put(`/item/${id}`, { name, price, description: desc });
   },
 
   deleteItem: async (id: number) => {
