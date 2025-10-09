@@ -72,9 +72,9 @@ export default function StoreTable() {
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Tags</TableHead>
+              <TableHead className="text-center">Name</TableHead>
+              <TableHead className="text-center">Items Count</TableHead>
+              <TableHead className="text-center">Tags Count</TableHead>
               <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -82,29 +82,31 @@ export default function StoreTable() {
             {stores.map((store) => (
               <TableRow key={store.id}>
                 <TableCell>{store.id}</TableCell>
-                <TableCell>
-                  <Link
-                    to={`/stores/${store.id}`}
-                    className="text-black-300 underline"
-                  >
+                <TableCell className="text-center text-black-500 hover:text-blue-700">
+                  <Link to={`/stores/${store.id}`}>
                     {store.name}
                   </Link>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   {store.items.length > 0 ? (
-                    <span>{store.items.length}</span>
+                    <span className="text-black-500">{store.items.length}</span>
                   ) : (
                     <span className="text-neutral-400">No items</span>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   {store.tags.length > 0
-                    ? store.tags.map((t) => t.name).join(", ")
-                    : <span className="text-neutral-400">No tags</span>}
+                    ? 
+                      <Link to={`/stores/${store.id}/tags`} className="text-black-500">
+                        {store.tags.length} <span className="text-neutral-400 hover:underline">(See details)</span>
+                      </Link>
+                    : <Link to={`/stores/${store.id}/tags`} className="text-neutral-400 hover:underline">
+                        Create Tag +
+                      </Link>}
                 </TableCell>
                 <TableCell className="flex align-center justify-center gap-4">
                   <Edit
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:text-blue-400"
                     onClick={() => {
                       setSelectedStore(store);
                       setEditOpen(true);
