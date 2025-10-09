@@ -1,22 +1,31 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
 import { toast } from "react-toastify";
 import { storeService } from "@/services/storeService";
-import type { Store, Tag } from "@/types/storeTypes";
+import type { Store, Tag, Tags } from "@/types/storeTypes";
 
 type StoreState = {
   stores: Store[];
+  currentStore: Store | null;
+  storeTags: Tags[];
   allTags: Tag[];
   loading: boolean;
+
   fetchStores: () => Promise<void>;
   fetchAllTags: () => Promise<void>;
   createStore: (name: string, selectedTags: number[]) => Promise<void>;
   updateStore: (id: number, name: string, selectedTags: number[]) => Promise<void>;
   deleteStore: (id: number) => Promise<void>;
+  getStoreById: (storeId: number) => Promise<void>;
+  getTagsOfStore: (storeId: number) => Promise<Tag[]>;
+  addTagToStore: (storeId: number, tagName: string) => Promise<void>;
+  editTag: (tagId: number, storeId: number, tagName: string) => Promise<void>;
+  removeTagFromStore: (tagId: number) => Promise<void>;
 };
 
 export const useStoreStore = create<StoreState>((set, get) => ({
   stores: [],
+  currentStore: null,
+  storeTags: [],
   allTags: [],
   loading: false,
 
@@ -28,6 +37,18 @@ export const useStoreStore = create<StoreState>((set, get) => ({
     } catch (err) {
       console.error(err);
       toast.error("Failed to fetch stores");
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  getStoreById: async (storeId: number) => {
+    set({ loading: true });
+    try {
+      const store = await storeService.getStore(storeId);
+      set({ currentStore: store });
+    } catch (err) {
+      console.error(err);
     } finally {
       set({ loading: false });
     }
@@ -46,11 +67,10 @@ export const useStoreStore = create<StoreState>((set, get) => ({
   createStore: async (name, selectedTags) => {
     try {
       const storeId = await storeService.createStore(name);
-
       for (const tagId of selectedTags) {
-        await storeService.addTagToStore(storeId, tagId);
+        const tagName = get().allTags.find((t) => t.id === tagId)?.name;
+        if (tagName) await storeService.addTagToStore(storeId, tagName);
       }
-
       toast.success("Store created");
       await get().fetchStores();
       await get().fetchAllTags();
@@ -64,17 +84,19 @@ export const useStoreStore = create<StoreState>((set, get) => ({
     try {
       await storeService.updateStore(id, name);
 
-      const currentStore = get().stores.find((s) => s.id === id);
-      const currentTags = currentStore ? currentStore.tags.map((t: { id: any; }) => t.id) : [];
+      const currentTags = await storeService.getTagsOfStore(id);
+      const currentTagIds = currentTags.map((t) => t.id);
 
-      const tagsToAdd = selectedTags.filter((id) => !currentTags.includes(id));
-      const tagsToRemove = currentTags.filter((id: number) => !selectedTags.includes(id));
+      const tagsToAdd = selectedTags.filter((tagId) => !currentTagIds.includes(tagId));
+      const tagsToRemove = currentTagIds.filter((tagId) => !selectedTags.includes(tagId));
 
       for (const tagId of tagsToAdd) {
-        await storeService.addTagToStore(id, tagId);
+        const tagName = get().allTags.find((t) => t.id === tagId)?.name;
+        if (tagName) await storeService.addTagToStore(id, tagName);
       }
+
       for (const tagId of tagsToRemove) {
-        await storeService.removeTagFromStore(id, tagId);
+        await storeService.deleteTag(tagId);
       }
 
       toast.success("Store updated");
@@ -92,9 +114,68 @@ export const useStoreStore = create<StoreState>((set, get) => ({
       toast.info("Store deleted 🗑️");
       await get().fetchStores();
       await get().fetchAllTags();
+      set({ currentStore: null, storeTags: [] });
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete store");
     }
   },
+
+  addTagToStore: async (storeId, tagName) => {
+    try {
+      await storeService.addTagToStore(storeId, tagName);
+      toast.success("Tag added to store");
+      await Promise.all([
+        get().getStoreById(storeId),
+        get().getTagsOfStore(storeId),
+        get().fetchAllTags(),
+      ]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add tag to store");
+    }
+  },
+
+  removeTagFromStore: async (tagId) => {
+    try {
+      await storeService.deleteTag(tagId);
+      toast.success("Tag removed from store");
+      const currentStore = get().currentStore;
+    if (currentStore) {
+      await get().getTagsOfStore(currentStore.id);
+    }
+
+    await get().fetchAllTags();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove tag from store");
+    }
+  },
+
+  getTagsOfStore: async (storeId) => {
+    try {
+      const tags = await storeService.getTagsOfStore(storeId);
+      set({ storeTags: tags });
+      return tags;
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch tags of the store");
+      set({ storeTags: [] });
+      return [];
+    }
+  },
+
+  editTag: async (tagId, storeId, tagName) => {
+    try {
+      await storeService.editTag(tagId, tagName);
+      await Promise.all([
+        get().getTagsOfStore(storeId),
+        get().fetchAllTags(),
+      ]);
+      toast.success("Tag updated successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to edit tag, Please try again.");
+    }
+  }
 }));

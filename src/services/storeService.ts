@@ -24,15 +24,16 @@ export const storeService = {
   },
 
   getStore: async (storeId: number) => {
-    await api.get(`/store/${storeId}`);
+    const res = await api.get(`/store/${storeId}`);
+    return res.data;
   },
 
   updateStore: async (id: number, name: string): Promise<void> => {
     await api.put(`/store/${id}`, { name });
   },
 
-  addTagToStore: async (storeId: number, tagId: number) => {
-    await api.post(`/store/${storeId}/tag/${tagId}`);
+  addTagToStore: async (storeId: number, tagName: string) => {
+    await api.post(`/store/${storeId}/tag`, { name: tagName});
   },
 
   removeTagFromStore: async (storeId: number, tagId: number) => {
@@ -41,5 +42,23 @@ export const storeService = {
 
   deleteStore: async (id: number) => {
     await api.delete(`/store/${id}`);
+  },
+
+  getTagItems: async (tagId: number) => {
+    const res = await api.get(`/tag/${tagId}`);
+    return res.data;
+  },
+
+  deleteTag: async (tagId: number) => {
+    await api.delete(`/tag/${tagId}`);
+  },
+
+  editTag: async (tagId:number, tagName: string) => {
+    await api.put(`/tag/${tagId}`, {name: tagName});
+  },
+
+  getTagsOfStore: async (storeId: number): Promise<Tag[]> => {
+    const res = await api.get(`/store/${storeId}/tag`);
+    return res.data;
   },
 };
