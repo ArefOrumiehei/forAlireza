@@ -8,8 +8,8 @@ interface ItemStoreState {
   loading: boolean;
   fetchStore: (storeId: number) => Promise<void>;
   fetchItems: () => Promise<void>;
-  createItem: (storeId: number, name: string, price: number) => Promise<void>;
-  updateItem: (id: number, storeId: number, name: string, price: number) => Promise<void>;
+  createItem: (storeId: number, name: string, price: number, desc: string) => Promise<void>;
+  updateItem: (id: number, storeId: number, name: string, price: number, desc: string) => Promise<void>;
   deleteItem: (id: number, storeId: number) => Promise<void>;
 }
 
@@ -42,18 +42,18 @@ export const useItemStore = create<ItemStoreState>((set, get) => ({
     }
   },
 
-  createItem: async (storeId, name, price) => {
+  createItem: async (storeId, name, price, desc) => {
     try {
-      await itemService.createItem(storeId, name, price);
+      await itemService.createItem(storeId, name, price, desc);
       await get().fetchStore(storeId);
     } catch (err) {
       console.error(err);
     }
   },
 
-  updateItem: async (id, storeId, name, price) => {
+  updateItem: async (id, storeId, name, price, desc) => {
     try {
-      await itemService.updateItem(id, name, price);
+      await itemService.updateItem(id, name, price, desc);
       await get().fetchStore(storeId);
     } catch (err) {
       console.error(err);
