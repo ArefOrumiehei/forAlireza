@@ -33,7 +33,7 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <aside className="w-16 md:w-64 bg-neutral-900 text-neutral-100 flex flex-col transition-all duration-300">
         <div className="p-4 text-xl font-bold border-b border-neutral-700 hidden md:block">
-          <Link to={"/"}>Dashboard</Link>
+          <Link to={"/"}>Stores Managment</Link>
         </div>
 
         <nav className="flex-1 p-2 md:p-4 space-y-2 flex flex-col items-center md:items-stretch">
