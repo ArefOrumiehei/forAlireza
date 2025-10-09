@@ -22,6 +22,7 @@ type StoreItem = {
   id: number;
   name: string;
   price: number;
+  description: string;
 };
 
 export default function StoreDetails() {
@@ -37,6 +38,8 @@ export default function StoreDetails() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+
 
   useEffect(() => {
     if (!isNaN(storeId)) fetchStore(storeId);
@@ -46,24 +49,27 @@ export default function StoreDetails() {
     setEditItem(item);
     setName(item.name);
     setPrice(item.price.toString());
+    setDescription(item.description);
     setEditOpen(true);
   };
 
   const handleCreate = async () => {
     if (!name.trim() || price === "") return;
-    await createItem(storeId, name, parseFloat(price));
+    await createItem(storeId, name, parseFloat(price), description);
     setCreateOpen(false);
     setName("");
     setPrice("");
+    setDescription("");
   };
 
   const handleEdit = async () => {
     if (!editItem || !name.trim() || price === "") return;
-    await updateItem(editItem.id, storeId, name, parseFloat(price));
+    await updateItem(editItem.id, storeId, name, parseFloat(price), description);
     setEditOpen(false);
     setEditItem(null);
     setName("");
     setPrice("");
+    setDescription("");
   };
 
   const handleDelete = async (id: number) => {
@@ -97,6 +103,11 @@ export default function StoreDetails() {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
           />
+          <Input
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </CreateModal>
       </div>
 
@@ -120,6 +131,11 @@ export default function StoreDetails() {
             value={price}
             onChange={(e) => setPrice(e.target.value)}
           />
+          <Input
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
         </EditModal>
       )}
 
@@ -133,8 +149,9 @@ export default function StoreDetails() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[100px]">ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead className="text-right">Price</TableHead>
+              <TableHead className="text-center">Name</TableHead>
+              <TableHead className="text-center">Description</TableHead>
+              <TableHead className="text-center">Price</TableHead>
               <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -142,11 +159,16 @@ export default function StoreDetails() {
             {store.items.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.id}</TableCell>
-                <TableCell>{item.name}</TableCell>
-                <TableCell className="text-right">{item.price}</TableCell>
-                <TableCell className="flex justify-center gap-4">
+                <TableCell className="text-center">{item.name}</TableCell>
+                <TableCell className="text-center">
+                  {item.description?.length > 30
+                    ? `${item.description.slice(0, 30)}...`
+                    : item.description || "-"}
+                </TableCell>
+                <TableCell className="text-center">{item.price}</TableCell>
+                <TableCell className="flex justify-center gap-4 text-center">
                   <Edit
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:text-blue-400"
                     onClick={() => handleOpenEdit(item)}
                   />
                   <DeleteModal
