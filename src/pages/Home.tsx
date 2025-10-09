@@ -5,11 +5,11 @@ export default function Home() {
   const { decodedData, userId, userData, setUserFromToken } = useUserStore();
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token && !decodedData) {
+    const token = localStorage.getItem("access_token");
+    if (token) {
       setUserFromToken(token);
     }
-  }, [decodedData, setUserFromToken]);
+  }, []);
 
   return (
     <div className="p-6">

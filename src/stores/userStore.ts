@@ -25,7 +25,7 @@ type UserState = {
   isAuthenticated: boolean;
   setUserFromToken: (token: string) => Promise<void>;
   clearUser: () => void;
-  refreshUserData: () => Promise<void>;
+  getUserData: (userId: number) => Promise<UserData | null>;
 };
 
 export const useUserStore = create<UserState>((set, get) => ({
@@ -37,7 +37,9 @@ export const useUserStore = create<UserState>((set, get) => ({
   setUserFromToken: async (token) => {
     try {
       const decoded = jwtDecode<DecodedToken>(token);
-      localStorage.setItem("accessToken", token);
+      const userId = Number(decoded.sub);
+
+      localStorage.setItem("access_token", token);
 
       set({
         userId: decoded.sub,
@@ -45,7 +47,11 @@ export const useUserStore = create<UserState>((set, get) => ({
         isAuthenticated: true,
       });
 
-      await get().refreshUserData();
+      const userData = await get().getUserData(userId);
+
+      if (userData) {
+        set({ userData });
+      }
     } catch (err) {
       console.error("Invalid token", err);
       set({ userId: null, decodedData: null, userData: null, isAuthenticated: false });
@@ -57,16 +63,16 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ userId: null, decodedData: null, userData: null, isAuthenticated: false });
   },
 
-  refreshUserData: async () => {
-    const { userId } = get();
-    if (!userId) return;
-
+  getUserData: async (userId: number) => {
+    if (!userId) return null;
     try {
-      const data = await userService.getUser(Number(userId));
+      const data = await userService.getUser(userId);
       set({ userData: data });
+      return data;
     } catch (err: any) {
       console.error("Failed to fetch user data", err);
       set({ userData: null });
+      return null;
     }
   },
 }));
